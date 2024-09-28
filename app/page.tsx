@@ -1,7 +1,5 @@
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { SparklesCore } from "../components/ui/sparkles";
-import { div, main } from "framer-motion/client";
-import BorderButton from "@/components/ui/lift-border";
 
 export default function Home() {
 
@@ -40,7 +38,7 @@ export default function Home() {
               />
 
               <p className="tracking-widest text-xl text-center text-blue-100 max-w-80">
-                filler filler filler filler filler
+                ${`${slogan}`}
               </p>
 
               <div className="mt-10">
