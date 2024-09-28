@@ -38,7 +38,7 @@ export default function Home() {
               />
 
               <p className="tracking-widest text-xl text-center text-blue-100 max-w-80">
-                ${`${slogan}`}
+                {`${slogan}`}
               </p>
 
               <div className="mt-10">
