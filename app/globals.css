@@ -14,6 +14,14 @@
   }
 }
 
+.questrial {
+  font-family: var(--font-questrial);
+}
+
+.roboto {
+  font-family: var(--font-roboto);
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
@@ -24,12 +32,4 @@ body {
   .text-balance {
     text-wrap: balance;
   }
-}
-
-.questrial {
-  font-family: var(--font-questrial);
-}
-
-.roboto {
-  font-family: var(--font-roboto);
 }
