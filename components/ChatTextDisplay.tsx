@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-// Define the type for the component props
 interface ChatTextDisplayProps {
-  texts: string[]; // Array of texts to display
-  delay?: number;  // Optional delay in milliseconds between messages
+  texts: string[];
+  delay?: number;
 }
 
 const ChatTextDisplay: React.FC<ChatTextDisplayProps> = ({ texts, delay = 1000 }) => {
-  const [currentText, setCurrentText] = useState<string[]>([]); // State for the text to display
+  const [currentText, setCurrentText] = useState<string[]>([]);
+  const endOfChatRef = useRef<HTMLDivElement | null>(null); // Create a ref for the end of the chat
 
   useEffect(() => {
     let index = 0;
@@ -20,11 +20,18 @@ const ChatTextDisplay: React.FC<ChatTextDisplayProps> = ({ texts, delay = 1000 }
       }
     }, delay);
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => clearInterval(interval);
   }, [texts, delay]);
 
+  // Scroll to the bottom whenever currentText changes
+  useEffect(() => {
+    if (endOfChatRef.current) {
+      endOfChatRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [currentText]);
+
   return (
-    <div className="flex flex-col space-y-3 p-4 max-w-md mx-auto overflow-scroll">
+    <div className="flex flex-col space-y-3 w-full p-4 mx-auto">
       {currentText.map((text, i) => (
         <div
           key={i}
@@ -35,6 +42,7 @@ const ChatTextDisplay: React.FC<ChatTextDisplayProps> = ({ texts, delay = 1000 }
           {text}
         </div>
       ))}
+      <div ref={endOfChatRef} /> {/* Empty div to scroll into view */}
     </div>
   );
 };
