@@ -25,3 +25,11 @@ body {
     text-wrap: balance;
   }
 }
+
+.questrial {
+  font-family: var(--font-questrial);
+}
+
+.roboto {
+  font-family: var(--font-roboto);
+}

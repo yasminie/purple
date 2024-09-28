@@ -34,10 +34,10 @@ export default function Home() {
 
               <TextGenerateEffect
                 words={logo}
-                className="text-center text-[40px] md:text-5xl lg:text-6xl mb-3"
+                className="questrial text-center text-[40px] md:text-5xl lg:text-6xl mb-3"
               />
 
-              <p className="tracking-widest text-xl text-center text-blue-100 max-w-80">
+              <p className="roboto tracking-widest text-xl text-center text-blue-100 max-w-80">
                 {`${slogan}`}
               </p>
 
@@ -45,14 +45,14 @@ export default function Home() {
 
                 <button className="p-[3px] relative m-2">
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg" />
-                  <div className="px-8 py-2  bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
+                  <div className="roboto px-8 py-2  bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
                       Login
                   </div>
                 </button>
 
                 <button className="p-[3px] relative m-2">
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg" />
-                  <div className="px-8 py-2  bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
+                  <div className="roboto px-8 py-2  bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
                       Sign Up
                   </div>
                 </button>
@@ -63,6 +63,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <footer>
+        &copy; Copyright 2024 purple.ai
+      </footer>
     </main>
   );
 }
