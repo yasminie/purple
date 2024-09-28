@@ -4,7 +4,7 @@ import { SparklesCore } from "../components/ui/sparkles";
 export default function Home() {
 
   const logo = `purple.ai`;
-  const slogan = "idk";
+  const slogan = "Enhance, Integrate, Innovate";
 
   return (
     <main className="relative flex justify-center items-center flex-col
