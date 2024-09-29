@@ -22,13 +22,14 @@ const timelineData: Timeline[] = [
         timelines: [
             {
                 href: "page1",
-                title: "Tag generator"
+                title: "Sample chat one!"
             },
             {
                 href: "title-generator",
-                title: "Title generator"
+                title: "Sample chat two!"
             },
         ]
+        
     }
 
 ];
