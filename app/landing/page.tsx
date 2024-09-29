@@ -1,3 +1,5 @@
+// pages/MainPage.tsx
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -8,28 +10,29 @@ import ChatTextDisplay from '@/components/ChatTextDisplay';
 // Define types
 type LLMOptions = 'ChatGPT' | 'Claude' | 'Llama' | 'purple.ai';
 
-type ChatLogEntry = {
+interface ChatLogEntry {
   type: 'user' | 'llm' | 'error';
   message: string;
   llm?: LLMOptions;
-};
+  modelUsed?: string;
+  reasonForModelSelection?: string;
+}
 
-type Message = {
+interface Message {
   sender: string;
   text: string;
-};
+}
 
-type Conversation = {
+interface Conversation {
   conversationId: string;
   participants: string[];
   messages: Message[];
-};
+}
 
 const MainPage: React.FC = () => {
   // State variables
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [selectedOption, setSelectedOption] = useState<LLMOptions>('purple.ai');
-  const [loading, setLoading] = useState<boolean>(true);
   const [isSending, setIsSending] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>('');
   const [chatLog, setChatLog] = useState<ChatLogEntry[]>([]);
@@ -90,6 +93,8 @@ const MainPage: React.FC = () => {
         type: msg.sender === userFirstName ? 'user' : 'llm',
         message: msg.text,
         llm: msg.sender !== userFirstName ? (msg.sender as LLMOptions) : undefined,
+        modelUsed: undefined,
+        reasonForModelSelection: undefined,
       }));
       setChatLog(newChatLog);
     }
@@ -115,6 +120,7 @@ const MainPage: React.FC = () => {
     setPrompt(e.target.value);
   };
 
+  // Declare the function as async
   const handleSendPrompt = async () => {
     if (!prompt.trim()) return;
 
@@ -150,10 +156,10 @@ const MainPage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include cookies in the request
+        credentials: 'include',
         body: JSON.stringify({
           prompt,
-          chatLog, // Include chatLog in the request body
+          chatLog,
           activeConversationId,
         }),
       });
@@ -165,11 +171,29 @@ const MainPage: React.FC = () => {
 
       const data = await res.json();
 
+      // Extract modelUsed and reasonForModelSelection
+      let modelUsed = '';
+      let reasonForModelSelection = '';
+
+      if (selectedOption === 'purple.ai') {
+        modelUsed = data.selectedLlm || 'Unknown Model';
+        reasonForModelSelection = data.reasonForSelection || 'No reason provided.';
+      } else {
+        modelUsed = selectedOption;
+        reasonForModelSelection = `Using ${selectedOption} as selected.`;
+      }
+
       // Update chat log with the user's prompt and LLM response
       setChatLog((prevLog) => [
         ...prevLog,
         { type: 'user', message: prompt },
-        { type: 'llm', llm: selectedOption, message: data.response },
+        {
+          type: 'llm',
+          llm: selectedOption,
+          message: data.response,
+          modelUsed: modelUsed,
+          reasonForModelSelection: reasonForModelSelection,
+        },
       ]);
 
       // Update conversations state
@@ -211,7 +235,7 @@ const MainPage: React.FC = () => {
         body: JSON.stringify({
           selectedOption,
         }),
-        credentials: 'include', // Include credentials
+        credentials: 'include',
       });
 
       if (res.ok) {
@@ -228,16 +252,24 @@ const MainPage: React.FC = () => {
     }
   };
 
+  // Function to get conversation name
+  const getConversationName = (conv: Conversation, index: number) => {
+    if (conv.messages.length > 0) {
+      // Get the first few words of the first message
+      const firstMessage = conv.messages[0].text;
+      return firstMessage.split(' ').slice(0, 3).join(' ') + '...';
+    } else {
+      // Assign numerical name if no messages
+      return `Conversation ${index + 1}`;
+    }
+  };
+
   // Render
   return (
     <div className="min-h-screen w-full flex">
       {/* Combined Sidebar with Navbar styling */}
       <div className="w-64 bg-[#10002B] text-white p-4">
         {/* Navbar content (styling from the nonfunctional sidebar) */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold">Your Logo</h1>
-          {/* Add any additional navbar links or content here */}
-        </div>
 
         {/* Functional Conversations Sidebar */}
         <button
@@ -248,7 +280,7 @@ const MainPage: React.FC = () => {
         </button>
         <h2 className="text-xl font-bold mb-4">Conversations</h2>
         <ul>
-          {conversations.map((conv) => (
+          {conversations.map((conv, index) => (
             <li
               key={conv.conversationId}
               className={`p-2 cursor-pointer ${
@@ -256,7 +288,7 @@ const MainPage: React.FC = () => {
               }`}
               onClick={() => handleConversationClick(conv.conversationId)}
             >
-              Conversation with {conv.participants.find((p) => p !== 'user')}
+              {getConversationName(conv, index)}
             </li>
           ))}
         </ul>
