@@ -32,7 +32,7 @@ export default function Signup() {
       });
 
       if (res.ok) {
-        router.push('/main'); // Redirect to main page after successful signup
+        router.push('/landing'); // Redirect to main page after successful signup
       } else {
         const errorData = await res.json();
         setError(errorData.message || 'Failed to sign up'); // Display error message from the server

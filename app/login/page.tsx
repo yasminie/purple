@@ -27,7 +27,7 @@ export default function Login() {
       });
 
       if (res.ok) {
-        router.push('/main'); // Redirect to main page after login
+        router.push('/landing'); // Redirect to main page after login
       } else {
         const errorData = await res.json();
         setError(errorData.message || 'Failed to log in'); // Display error message from the server
