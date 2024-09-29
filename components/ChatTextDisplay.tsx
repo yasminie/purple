@@ -53,10 +53,7 @@ const ChatTextDisplay: React.FC<ChatTextDisplayProps> = ({ chatLog }) => {
                 )}
               </span>
 
-
-
-
-              <p className="mt-2">{entry.message}</p>
+              <p className="mt-2" style={{ whiteSpace: 'pre-wrap' }}>{entry.message}</p>
             </div>
           );
         } else {
@@ -75,7 +72,7 @@ const ChatTextDisplay: React.FC<ChatTextDisplayProps> = ({ chatLog }) => {
               {entry.type === 'llm' && entry.llm && (
                 <p className="text-sm font-semibold">{entry.llm}</p>
               )}
-              <p>{entry.message}</p>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{entry.message}</p>
             </div>
           );
         }
