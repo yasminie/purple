@@ -273,17 +273,17 @@ const MainPage: React.FC = () => {
 
         {/* Functional Conversations Sidebar */}
         <button
-          className="p-2 bg-[#5A189A] rounded-md mb-4 w-full"
+          className="p-2 bg-[#5A189A] rounded-md mb-4 w-full roboto"
           onClick={handleNewConversation}
         >
           New Conversation
         </button>
-        <h2 className="text-xl font-bold mb-4">Conversations</h2>
+        <h2 className="text-xl font-bold mb-4 roboto">Conversations</h2>
         <ul>
           {conversations.map((conv, index) => (
             <li
               key={conv.conversationId}
-              className={`p-2 cursor-pointer ${
+              className={`p-2 cursor-pointer rounded-lg roboto m-2 hover:bg-[#240046] ${
                 conv.conversationId === activeConversationId ? 'bg-[#5A189A]' : ''
               }`}
               onClick={() => handleConversationClick(conv.conversationId)}
