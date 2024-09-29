@@ -1,86 +1,185 @@
-"use client";
+'use client';
+
 import Navbar from '@/components/Navbar';
-import React, { useState } from 'react';
-import { FaChevronDown, FaArrowUp } from "react-icons/fa";
-import ChatTextDisplay from '../../components/ChatTextDisplay'; // Assuming this is your chat display component
+import React, { useEffect, useState } from 'react';
+import { FaChevronDown, FaArrowUp } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import ChatTextDisplay from '@/components/ChatTextDisplay';
 
-const Landing = () => {
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState("purple.ai");
-  const [inputValue, setInputValue] = useState(""); // Track input value
-  const [isSubmitted, setIsSubmitted] = useState(false);
+// Define types
+type LLMOptions = 'ChatGPT' | 'Claude' | 'Llama' | 'Gemini' | 'Command R' | 'purple.ai';
 
+type ChatLogEntry = {
+  type: 'user' | 'llm' | 'error';
+  message: string;
+  llm?: LLMOptions;
+};
+
+const MainPage: React.FC = () => {
+  // State variables
+  const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const [selectedOption, setSelectedOption] = useState<LLMOptions>('purple.ai');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [prompt, setPrompt] = useState<string>('');
+  const [chatLog, setChatLog] = useState<ChatLogEntry[]>([]);
+  const router = useRouter();
+
+  // Session validation
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/validate-session');
+        if (res.ok) {
+          setLoading(false);
+        } else {
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('Failed to validate session:', error);
+        router.push('/login');
+      }
+    };
+
+    checkSession();
+
+    // Load chat log from session storage if available
+    const savedChatLog = sessionStorage.getItem('chatLog');
+    if (savedChatLog) {
+      setChatLog(JSON.parse(savedChatLog));
+    }
+  }, [router]);
+
+  useEffect(() => {
+    // Save chat log to session storage whenever it updates
+    sessionStorage.setItem('chatLog', JSON.stringify(chatLog));
+  }, [chatLog]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // Handlers
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
   };
 
-  const handleOptionClick = (option: React.SetStateAction<string>) => {
+  const handleOptionClick = (option: LLMOptions) => {
     setSelectedOption(option);
     setDropdownOpen(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    setPrompt(e.target.value);
   };
 
-  const handleSubmit = () => {
-    if (inputValue.trim()) {
-      setIsSubmitted(true); // Set submission state to true
+  const handleSendPrompt = async () => {
+    if (!prompt.trim()) return;
+
+    let apiEndpoint = '';
+
+    // Determine API endpoint based on selected LLM
+    switch (selectedOption) {
+      case 'ChatGPT':
+        apiEndpoint = '/api/chatgpt';
+        break;
+      case 'Claude':
+        apiEndpoint = '/api/claude';
+        break;
+      case 'Llama':
+        apiEndpoint = '/api/llama';
+        break;
+      case 'Gemini':
+        apiEndpoint = '/api/gemini';
+        break;
+      case 'Command R':
+        apiEndpoint = '/api/commandr';
+        break;
+      case 'purple.ai':
+        apiEndpoint = '/api/purple';
+        break;
+      default:
+        setChatLog((prevLog) => [
+          ...prevLog,
+          { type: 'error', message: 'Please select a valid LLM.' },
+        ]);
+        return;
+    }
+
+    try {
+      setIsSending(true);
+
+      const res = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch response from the LLM.');
+      }
+
+      const data = await res.json();
+
+      // Update chat log with the user's prompt and LLM response
+      setChatLog((prevLog) => [
+        ...prevLog,
+        { type: 'user', message: prompt },
+        { type: 'llm', llm: selectedOption, message: data.response },
+      ]);
+
+      setPrompt('');
+    } catch (error: any) {
+      console.error('Error making API call:', error);
+      setChatLog((prevLog) => [
+        ...prevLog,
+        { type: 'error', message: error.message || 'An error occurred.' },
+      ]);
+    } finally {
+      setIsSending(false);
     }
   };
 
-  const texts = [
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-    "Hello?",
-    "Sure, let me assist with that.",
-    "Is there anything else you'd like to know?",
-  ];
-
+  // Render
   return (
     <div className="min-h-screen w-full flex">
       <Navbar />
       <div className="h-full w-full flex flex-col justify-between gap-3">
         <main className="min-h-screen w-full bg-[#240046] p-4 flex flex-col justify-between">
           <div className="relative">
-            <button 
+            <button
               onClick={toggleDropdown}
               className="text-lg font-bold flex items-center gap-2 p-2 rounded-md hover:bg-[#5A189A] transition-all"
+              aria-haspopup="true"
+              aria-expanded={isDropdownOpen}
             >
-              <p className="questrial">{selectedOption}</p>
-              <FaChevronDown className={`text-xs text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <p className="questrial text-white">{selectedOption}</p>
+              <FaChevronDown
+                className={`text-xs text-gray-500 transition-transform ${
+                  isDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute top-full mt-2 w-48 bg-[#10002B] rounded-md shadow-lg z-10">
+              <div
+                className="absolute top-full mt-2 w-48 bg-[#10002B] rounded-md shadow-lg z-10"
+                role="menu"
+              >
                 <ul className="flex flex-col p-2 questrial">
-                  {["ChatGPT", "Claude", "Gemini", "Command R", "purple.ai"].map((option) => (
+                  {['ChatGPT', 'Claude', 'Gemini', 'Command R', 'purple.ai'].map((option) => (
                     <li
                       key={option}
-                      onClick={() => handleOptionClick(option)}
-                      className="p-2 hover:bg-[#5A189A] rounded-md cursor-pointer"
+                      onClick={() => handleOptionClick(option as LLMOptions)}
+                      className="p-2 hover:bg-[#5A189A] rounded-md cursor-pointer text-white"
+                      role="menuitem"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleOptionClick(option as LLMOptions);
+                      }}
                     >
                       {option}
                     </li>
@@ -90,31 +189,44 @@ const Landing = () => {
             )}
           </div>
 
+          {/* Chat Log Display */}
           <div className="flex-grow flex flex-col items-center justify-center">
-            {/* Conditionally render the text or chat display */}
-            {isSubmitted ? (
-              <div className="w-full max-w-screen max-h-[80vh] bg-transparent p-4 rounded-md overflow-y-auto no-scrollbar justify-end flex flex-col-reverse">
-                <ChatTextDisplay texts={texts} />
-              </div>
+            {chatLog.length === 0 ? (
+              <h1 className="roboto text-4xl font-semibold text-white">
+                How can I help you today?
+              </h1>
             ) : (
-              <h1 className="roboto text-4xl font-semibold">How can I help you today?</h1>
+              <div className="w-full max-w-screen max-h-[80vh] bg-transparent p-4 rounded-md overflow-y-auto no-scrollbar flex flex-col">
+                <ChatTextDisplay chatLog={chatLog} />
+              </div>
             )}
           </div>
 
-          <p className="text-xs text-center p-2 roboto">AI isn't always correct. Please check for mistakes.</p>
+          <p className="text-xs text-center p-2 roboto text-white">
+            AI isn't always correct. Please check for mistakes.
+          </p>
+
           <div className="flex justify-center relative">
             <input
               type="text"
               className="w-full h-12 bg-white rounded-xl border border-gray-500 px-4 text-black"
               placeholder="Message here..."
-              value={inputValue}
+              value={prompt}
               onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSendPrompt();
+                }
+              }}
+              aria-label="Prompt input"
             />
-            <button 
+            <button
+              onClick={handleSendPrompt}
+              disabled={isSending}
               className="text-white hover:opacity-80 bg-[#240046] rounded-lg p-3 absolute right-2 top-1"
-              onClick={handleSubmit} 
+              aria-label="Send message"
             >
-              <FaArrowUp/>
+              {isSending ? 'Sending...' : <FaArrowUp />}
             </button>
           </div>
         </main>
@@ -123,4 +235,4 @@ const Landing = () => {
   );
 };
 
-export default Landing;
+export default MainPage;
