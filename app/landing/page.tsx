@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import ChatTextDisplay from '@/components/ChatTextDisplay';
 
 // Define types
-type LLMOptions = 'ChatGPT' | 'Claude' | 'Llama' | 'Gemini' | 'Command R' | 'purple.ai';
+type LLMOptions = 'ChatGPT' | 'Claude' | 'Llama' | 'purple.ai';
 
 type ChatLogEntry = {
   type: 'user' | 'llm' | 'error';
@@ -89,12 +89,6 @@ const MainPage: React.FC = () => {
       case 'Llama':
         apiEndpoint = '/api/llama';
         break;
-      case 'Gemini':
-        apiEndpoint = '/api/gemini';
-        break;
-      case 'Command R':
-        apiEndpoint = '/api/commandr';
-        break;
       case 'purple.ai':
         apiEndpoint = '/api/purple';
         break;
@@ -170,7 +164,7 @@ const MainPage: React.FC = () => {
                 role="menu"
               >
                 <ul className="flex flex-col p-2 questrial">
-                  {['ChatGPT', 'Claude', 'Gemini', 'Command R', 'purple.ai'].map((option) => (
+                  {['ChatGPT', 'Claude', 'Llama', 'purple.ai'].map((option) => (
                     <li
                       key={option}
                       onClick={() => handleOptionClick(option as LLMOptions)}
@@ -236,3 +230,4 @@ const MainPage: React.FC = () => {
 };
 
 export default MainPage;
+
