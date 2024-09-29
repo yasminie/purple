@@ -75,9 +75,9 @@ const MainPage: React.FC = () => {
 
   const handleSendPrompt = async () => {
     if (!prompt.trim()) return;
-
+  
     let apiEndpoint = '';
-
+  
     // Determine API endpoint based on selected LLM
     switch (selectedOption) {
       case 'ChatGPT':
@@ -99,32 +99,32 @@ const MainPage: React.FC = () => {
         ]);
         return;
     }
-
+  
     try {
       setIsSending(true);
-
+  
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, chatLog }), // Send the chat log
       });
-
+  
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to fetch response from the LLM.');
       }
-
+  
       const data = await res.json();
-
+  
       // Update chat log with the user's prompt and LLM response
       setChatLog((prevLog) => [
         ...prevLog,
         { type: 'user', message: prompt },
         { type: 'llm', llm: selectedOption, message: data.response },
       ]);
-
+  
       setPrompt('');
     } catch (error: any) {
       console.error('Error making API call:', error);
@@ -136,6 +136,7 @@ const MainPage: React.FC = () => {
       setIsSending(false);
     }
   };
+  
 
   // Render
   return (
