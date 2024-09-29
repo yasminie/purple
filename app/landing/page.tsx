@@ -1,6 +1,5 @@
 'use client';
 
-import Navbar from '@/components/Navbar';
 import React, { useEffect, useState } from 'react';
 import { FaChevronDown, FaArrowUp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
@@ -15,6 +14,17 @@ type ChatLogEntry = {
   llm?: LLMOptions;
 };
 
+type Message = {
+  sender: string;
+  text: string;
+};
+
+type Conversation = {
+  conversationId: string;
+  participants: string[];
+  messages: Message[];
+};
+
 const MainPage: React.FC = () => {
   // State variables
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -23,41 +33,73 @@ const MainPage: React.FC = () => {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>('');
   const [chatLog, setChatLog] = useState<ChatLogEntry[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [userFirstName, setUserFirstName] = useState<string>('');
   const router = useRouter();
 
-  // Session validation
+  // Session validation and fetch conversations
   useEffect(() => {
-    const checkSession = async () => {
+    const initializePage = async () => {
       try {
-        const res = await fetch('/api/auth/validate-session');
+        const res = await fetch('/api/auth/validate-session', {
+          credentials: 'include',
+        });
         if (res.ok) {
-          setLoading(false);
+          const sessionData = await res.json();
+          setUserFirstName(sessionData.firstName);
+
+          // Fetch conversations
+          const convRes = await fetch('/api/conversations', {
+            credentials: 'include',
+          });
+          if (convRes.ok) {
+            const data = await convRes.json();
+            setConversations(data.conversations);
+
+            if (data.conversations.length > 0) {
+              // Set the first conversation as active
+              setActiveConversationId(data.conversations[0].conversationId);
+              loadConversation(data.conversations[0].conversationId);
+            } else {
+              // If no conversations exist, create a new one
+              await handleNewConversation();
+            }
+          } else if (convRes.status === 401) {
+            router.push('/login');
+          }
         } else {
           router.push('/login');
         }
       } catch (error) {
-        console.error('Failed to validate session:', error);
+        console.error('Failed to initialize page:', error);
         router.push('/login');
       }
     };
 
-    checkSession();
-
-    // Load chat log from session storage if available
-    const savedChatLog = sessionStorage.getItem('chatLog');
-    if (savedChatLog) {
-      setChatLog(JSON.parse(savedChatLog));
-    }
+    initializePage();
   }, [router]);
 
-  useEffect(() => {
-    // Save chat log to session storage whenever it updates
-    sessionStorage.setItem('chatLog', JSON.stringify(chatLog));
-  }, [chatLog]);
+  // Load conversation messages into chatLog
+  const loadConversation = (conversationId: string) => {
+    const conversation = conversations.find(
+      (conv) => conv.conversationId === conversationId
+    );
+    if (conversation) {
+      const newChatLog = conversation.messages.map((msg) => ({
+        type: msg.sender === userFirstName ? 'user' : 'llm',
+        message: msg.text,
+        llm: msg.sender !== userFirstName ? (msg.sender as LLMOptions) : undefined,
+      }));
+      setChatLog(newChatLog);
+    }
+  };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  // Handle conversation click
+  const handleConversationClick = (conversationId: string) => {
+    setActiveConversationId(conversationId);
+    loadConversation(conversationId);
+  };
 
   // Handlers
   const toggleDropdown = () => {
@@ -75,9 +117,9 @@ const MainPage: React.FC = () => {
 
   const handleSendPrompt = async () => {
     if (!prompt.trim()) return;
-  
+
     let apiEndpoint = '';
-  
+
     // Determine API endpoint based on selected LLM
     switch (selectedOption) {
       case 'ChatGPT':
@@ -99,32 +141,54 @@ const MainPage: React.FC = () => {
         ]);
         return;
     }
-  
+
     try {
       setIsSending(true);
-  
+
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt, chatLog }), // Send the chat log
+        credentials: 'include', // Include cookies in the request
+        body: JSON.stringify({
+          prompt,
+          chatLog, // Include chatLog in the request body
+          activeConversationId,
+        }),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to fetch response from the LLM.');
       }
-  
+
       const data = await res.json();
-  
+
       // Update chat log with the user's prompt and LLM response
       setChatLog((prevLog) => [
         ...prevLog,
         { type: 'user', message: prompt },
         { type: 'llm', llm: selectedOption, message: data.response },
       ]);
-  
+
+      // Update conversations state
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) => {
+          if (conv.conversationId === activeConversationId) {
+            return {
+              ...conv,
+              messages: [
+                ...conv.messages,
+                { sender: userFirstName, text: prompt },
+                { sender: selectedOption, text: data.response },
+              ],
+            };
+          }
+          return conv;
+        })
+      );
+
       setPrompt('');
     } catch (error: any) {
       console.error('Error making API call:', error);
@@ -136,13 +200,69 @@ const MainPage: React.FC = () => {
       setIsSending(false);
     }
   };
-  
+
+  const handleNewConversation = async () => {
+    try {
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selectedOption,
+        }),
+        credentials: 'include', // Include credentials
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setConversations((prev) => [...prev, data.conversation]);
+        setActiveConversationId(data.conversation.conversationId);
+        setChatLog([]);
+      } else {
+        const errorData = await res.json();
+        console.error('Error creating new conversation:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error creating new conversation:', error);
+    }
+  };
 
   // Render
   return (
     <div className="min-h-screen w-full flex">
-      <Navbar />
-      <div className="h-full w-full flex flex-col justify-between gap-3">
+      {/* Combined Sidebar with Navbar styling */}
+      <div className="w-64 bg-[#10002B] text-white p-4">
+        {/* Navbar content (styling from the nonfunctional sidebar) */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold">Your Logo</h1>
+          {/* Add any additional navbar links or content here */}
+        </div>
+
+        {/* Functional Conversations Sidebar */}
+        <button
+          className="p-2 bg-[#5A189A] rounded-md mb-4 w-full"
+          onClick={handleNewConversation}
+        >
+          New Conversation
+        </button>
+        <h2 className="text-xl font-bold mb-4">Conversations</h2>
+        <ul>
+          {conversations.map((conv) => (
+            <li
+              key={conv.conversationId}
+              className={`p-2 cursor-pointer ${
+                conv.conversationId === activeConversationId ? 'bg-[#5A189A]' : ''
+              }`}
+              onClick={() => handleConversationClick(conv.conversationId)}
+            >
+              Conversation with {conv.participants.find((p) => p !== 'user')}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="flex-1 h-full w-full flex flex-col justify-between gap-3">
         <main className="min-h-screen w-full bg-[#240046] p-4 flex flex-col justify-between">
           <div className="relative">
             <button
@@ -231,4 +351,3 @@ const MainPage: React.FC = () => {
 };
 
 export default MainPage;
-

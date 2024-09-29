@@ -9,9 +9,12 @@ const MessageSchema = new mongoose.Schema({
 
 // Define the conversation schema
 const ConversationSchema = new mongoose.Schema({
-  conversationId: { type: mongoose.Schema.Types.ObjectId, default: new mongoose.Types.ObjectId() },
-  participants: [{ type: String, required: true }], // firstName of user, LLM name
-  messages: [MessageSchema] // Embedding the messages inside each conversation
+  conversationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: () => new mongoose.Types.ObjectId(), // Use a function here
+  },
+  participants: [{ type: String, required: true }],
+  messages: [MessageSchema],
 });
 
 // Define the main User schema

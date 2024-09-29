@@ -21,5 +21,5 @@ export default async function handler(req, res) {
     return res.status(401).json({ message: 'Invalid session' });
   }
 
-  res.status(200).json({ message: 'Authenticated' });
+  res.status(200).json({ message: 'Authenticated', firstName: user.firstName });
 }
