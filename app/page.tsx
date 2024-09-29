@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'; // Import Next.js router
 
 export default function Home() {
   const logo = `purple.ai`;
-  const slogan = "Enhance, Integrate, Innovate";
+  const slogan = "Power of many, simplicity of one";
   const router = useRouter(); // Initialize router
 
   const handleLoginClick = () => {
@@ -38,27 +38,21 @@ export default function Home() {
                 words={logo}
                 className="questrial text-center text-[40px] md:text-5xl lg:text-6xl mb-3"
               />
-              <p className="roboto tracking-widest text-xl text-center text-blue-100 max-w-80">
+              <p className="roboto tracking-widest text-xl text-center text-blue-100 max-w-120">
                 {`${slogan}`}
               </p>
 
               <div className="mt-10">
-                <button
-                  className="p-[3px] relative m-2"
-                  onClick={handleLoginClick} // Call handleLoginClick on click
-                >
+                <button className="p-[3px] relative m-2" onClick={handleLoginClick}>
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg" />
-                  <div className="roboto px-8 py-2 bg-black rounded-[6px] relative group transition duration-200 text-white hover:bg-transparent">
+                  <div className="roboto w-[120px] px-8 py-2 bg-black rounded-[6px] relative group transition duration-200 text-white hover:bg-transparent flex items-center justify-center">
                     Login
                   </div>
                 </button>
 
-                <button
-                  className="p-[3px] relative m-2"
-                  onClick={handleSignupClick} // Call handleSignupClick on click
-                >
+                <button className="p-[3px] relative m-2" onClick={handleSignupClick}>
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg" />
-                  <div className="roboto px-8 py-2 bg-black rounded-[6px] relative group transition duration-200 text-white hover:bg-transparent">
+                  <div className="roboto w-[120px] px-8 py-2 bg-black rounded-[6px] relative group transition duration-200 text-white hover:bg-transparent flex items-center justify-center">
                     Sign Up
                   </div>
                 </button>

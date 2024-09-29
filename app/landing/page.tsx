@@ -373,7 +373,7 @@ const MainPage: React.FC = () => {
               className="text-white hover:opacity-80 bg-[#240046] rounded-lg p-3 absolute right-2 top-1"
               aria-label="Send message"
             >
-              {isSending ? 'Sending...' : <FaArrowUp />}
+              <FaArrowUp className={isSending ? 'text-gray-400' : 'text-white'} />
             </button>
           </div>
         </main>

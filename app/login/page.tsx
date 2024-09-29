@@ -68,7 +68,7 @@ export default function Login() {
                 Login
               </div>
           </button>
-          <p className="text-center mt-5 text-black roboto">Need an account? <Link href={'/'} className="cursor-pointer text-[#9D4EDD] hover:text-[#7B2CBF]">Sign up</Link></p>
+          <p className="text-center mt-5 text-black roboto">Need an account? <Link href={'/signup'} className="cursor-pointer text-[#9D4EDD] hover:text-[#7B2CBF]">Sign up</Link></p>
         </form>
       </div>
   );
