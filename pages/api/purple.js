@@ -16,23 +16,25 @@ export default async function handler(req, res) {
           role: 'system',
           content: `You are an AI assistant designed to analyze user prompts and select the most appropriate Large Language Model (LLM) to answer based on the prompt’s content, context, and requirements. Your task is to evaluate each prompt based on the following categories and select the best LLM from the list provided. You should only provide the selected LLM and a brief explanation of why the chosen LLM is the best fit. Do not include additional responses, code, or content beyond the selection and reasoning.
 
-          **Categories and Corresponding LLMs:**
+**Categories and Corresponding LLMs:**
 
-          1. **Conversational / General Knowledge:** Use models like ChatGPT or Claude. These are suited for everyday questions, dialogue, and general assistance.
-          2. **Creative Writing / Storytelling:** Use Claude, Jurassic, or Cohere. These models excel in generating narratives, creative texts, and imaginative content.
-          3. **Technical / Coding Questions:** Use ChatGPT, as it is well-suited for technical writing, coding help, and software-related questions.
-          4. **Real-Time Data Retrieval / Action Commands:** Use Command R. This model is best for tasks involving live data, real-time information retrieval, or action-based queries.
-          5. **Multilingual Tasks:** Use Bloom. This model handles non-English language prompts and translation tasks effectively.
-          6. **Research and Analysis:** Use Falcon or Aleph Alpha. These models are tailored for detailed analysis, research-heavy content, and fact-based responses.
+1. **Conversational / General Knowledge:** Use models like ChatGPT or Claude. These are suited for everyday questions, dialogue, and general assistance.
+2. **Creative Writing / Storytelling:** Use Claude, Jurassic, or Cohere. These models excel in generating narratives, creative texts, and imaginative content.
+3. **Technical / Coding Questions:** Use ChatGPT, as it is well-suited for technical writing, coding help, and software-related questions.
+4. **Real-Time Data Retrieval / Action Commands:** Use Command R. This model is best for tasks involving live data, real-time information retrieval, or action-based queries.
+5. **Multilingual Tasks:** Use Bloom. This model handles non-English language prompts and translation tasks effectively.
+6. **Research and Analysis:** Use Falcon or Aleph Alpha. These models are tailored for detailed analysis, research-heavy content, and fact-based responses.
 
-          Provide the output strictly in this structure:
-          Selected LLM: [LLM Name]
-          Reason for Selection: [Brief explanation of why this LLM was chosen based on the prompt and context.]`,
+Provide the output strictly in this structure:
+Selected LLM: [LLM Name]
+Reason for Selection: [Brief explanation of why this LLM was chosen based on the prompt and context.]`,
         },
+        // Append existing chat log
         ...chatLog.map((entry) => ({
           role: entry.type === 'user' ? 'user' : 'assistant',
           content: entry.message,
         })),
+        // Add the latest user prompt
         { role: 'user', content: prompt },
       ];
 
@@ -62,8 +64,12 @@ export default async function handler(req, res) {
         throw new Error('No analysis output from ChatGPT.');
       }
 
-      const selectedLlm = analysisOutput.match(/Selected LLM: (.+)/i)?.[1]?.trim();
-      const reasonForSelection = analysisOutput.match(/Reason for Selection: (.+)/i)?.[1]?.trim();
+      // Extract 'Selected LLM' and 'Reason for Selection' using regex
+      const selectedLlmMatch = analysisOutput.match(/Selected LLM:\s*(.+)/i);
+      const reasonMatch = analysisOutput.match(/Reason for Selection:\s*(.+)/i);
+
+      const selectedLlm = selectedLlmMatch ? selectedLlmMatch[1].trim() : null;
+      const reasonForSelection = reasonMatch ? reasonMatch[1].trim() : null;
 
       if (!selectedLlm) {
         return res.status(400).json({ error: 'Unable to determine the best LLM from the analysis.' });
@@ -73,13 +79,13 @@ export default async function handler(req, res) {
       let apiEndpoint = '';
       switch (selectedLlm) {
         case 'ChatGPT':
-          apiEndpoint = `http://localhost:3000/api/chatgpt`;
+          apiEndpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/chatgpt`;
           break;
         case 'Claude':
-          apiEndpoint = `http://localhost:3000/api/claude`;
+          apiEndpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/claude`;
           break;
         case 'Llama':
-          apiEndpoint = `http://localhost:3000/api/llama`;
+          apiEndpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/llama`;
           break;
         default:
           return res.status(400).json({ error: `Selected LLM "${selectedLlm}" is not supported.` });
@@ -102,7 +108,9 @@ export default async function handler(req, res) {
       const llmOutput = llmData.response;
 
       res.status(200).json({
-        response: `Purple chose ${selectedLlm}. ${reasonForSelection} Response: ${llmOutput}`,
+        selectedLlm,
+        reasonForSelection,
+        response: llmOutput,
       });
     } catch (error) {
       console.error('Error in purple.ai handler:', error.message);

@@ -13,6 +13,7 @@ type ChatLogEntry = {
   type: 'user' | 'llm' | 'error';
   message: string;
   llm?: LLMOptions;
+  reasoning?: string; // Added reasoning field
 };
 
 const MainPage: React.FC = () => {
@@ -73,69 +74,95 @@ const MainPage: React.FC = () => {
     setPrompt(e.target.value);
   };
 
-  const handleSendPrompt = async () => {
-    if (!prompt.trim()) return;
-  
-    let apiEndpoint = '';
-  
-    // Determine API endpoint based on selected LLM
-    switch (selectedOption) {
-      case 'ChatGPT':
-        apiEndpoint = '/api/chatgpt';
-        break;
-      case 'Claude':
-        apiEndpoint = '/api/claude';
-        break;
-      case 'Llama':
-        apiEndpoint = '/api/llama';
-        break;
-      case 'purple.ai':
-        apiEndpoint = '/api/purple';
-        break;
-      default:
-        setChatLog((prevLog) => [
-          ...prevLog,
-          { type: 'error', message: 'Please select a valid LLM.' },
-        ]);
-        return;
+  // Inside your MainPage component
+
+const handleSendPrompt = async () => {
+  if (!prompt.trim()) return;
+
+  let apiEndpoint = '';
+
+  // Determine API endpoint based on selected LLM
+  switch (selectedOption) {
+    case 'ChatGPT':
+      apiEndpoint = '/api/chatgpt';
+      break;
+    case 'Claude':
+      apiEndpoint = '/api/claude';
+      break;
+    case 'Llama':
+      apiEndpoint = '/api/llama';
+      break;
+    case 'purple.ai':
+      apiEndpoint = '/api/purple';
+      break;
+    default:
+      setChatLog((prevLog) => [
+        ...prevLog,
+        { type: 'error', message: 'Please select a valid LLM.' },
+      ]);
+      return;
+  }
+
+  try {
+    setIsSending(true);
+
+    const res = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt, chatLog }), // Send the chat log
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to fetch response from the LLM.');
     }
-  
-    try {
-      setIsSending(true);
-  
-      const res = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+
+    const data = await res.json();
+    console.log('API Response:', data); // For debugging
+
+    // Update chat log with the user's prompt
+    setChatLog((prevLog) => [
+      ...prevLog,
+      { type: 'user', message: prompt },
+    ]);
+
+    if (selectedOption === 'purple.ai') {
+      // For purple.ai, use the separate fields
+      const { selectedLlm, reasonForSelection, response } = data;
+
+      setChatLog((prevLog) => [
+        ...prevLog,
+        {
+          type: 'llm',
+          llm: selectedOption,
+          message: response,
+          reasoning: `Purple chose ${selectedLlm}. ${reasonForSelection}`,
         },
-        body: JSON.stringify({ prompt, chatLog }), // Send the chat log
-      });
-  
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to fetch response from the LLM.');
-      }
-  
-      const data = await res.json();
-  
-      // Update chat log with the user's prompt and LLM response
+      ]);
+    } else {
+      // For other LLMs
+      const { response } = data;
       setChatLog((prevLog) => [
         ...prevLog,
-        { type: 'user', message: prompt },
-        { type: 'llm', llm: selectedOption, message: data.response },
+        { type: 'llm', llm: selectedOption, message: response },
       ]);
-  
-      setPrompt('');
-    } catch (error: any) {
-      console.error('Error making API call:', error);
-      setChatLog((prevLog) => [
-        ...prevLog,
-        { type: 'error', message: error.message || 'An error occurred.' },
-      ]);
-    } finally {
-      setIsSending(false);
     }
-  };
+
+    setPrompt('');
+  } catch (error: any) {
+    console.error('Error making API call:', error);
+    setChatLog((prevLog) => [
+      ...prevLog,
+      { type: 'error', message: error.message || 'An error occurred.' },
+    ]);
+  } finally {
+    setIsSending(false);
+  }
+};
+
+  
   
 
   // Render
@@ -231,4 +258,3 @@ const MainPage: React.FC = () => {
 };
 
 export default MainPage;
-
