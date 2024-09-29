@@ -66,7 +66,7 @@ const ChatTextDisplay: React.FC<ChatTextDisplayProps> = ({ chatLog }) => {
               key={index}
               className={`p-3 rounded-xl max-w-xs ${
                 entry.type === 'user'
-                  ? 'bg-[#C77DFF] text-white self-end'
+                  ? 'bg-[#581fad] text-white self-end'
                   : entry.type === 'llm'
                   ? 'bg-gray-200 text-black self-start'
                   : 'bg-red-200 text-black self-start'

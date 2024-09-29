@@ -86,7 +86,7 @@ export default function Signup() {
                 Sign Up
               </div>
         </button>
-        <p className="text-center mt-5 text-black roboto">Have an account? <Link href={'/'} className="cursor-pointer text-[#9D4EDD] hover:text-[#7B2CBF]">Login</Link></p>
+        <p className="text-center mt-5 text-black roboto">Have an account? <Link href={'/login'} className="cursor-pointer text-[#9D4EDD] hover:text-[#7B2CBF]">Login</Link></p>
       </form>
     </div>
   );
